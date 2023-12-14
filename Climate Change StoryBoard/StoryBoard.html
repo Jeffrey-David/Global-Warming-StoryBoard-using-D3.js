@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Understanding Global Warming</title>
+    <style>
+        body {
+            background-color: rgb(215, 215, 215); /* Subtle background color related to global warming */
+            font-family: Arial, sans-serif;
+            margin-top: -10;
+            padding: 0;
+        }
+
+        h1 {
+            background-color: #333; /* Dark background color for the title */
+            color: #fff; /* Text color for the title */
+            text-align: center;
+            padding: 20px;
+        }
+
+        .carousel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .carousel {
+            display: flex;
+            overflow: hidden;
+            width: 1000px; /* Set the width of your carousel */
+            align-items: center;
+            margin: 0 auto;
+        }
+
+        .carousel-frame {
+            display: flex; /* Center the content both horizontally and vertically */
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 550px; /* Set the height of your carousel frame */
+            overflow: hidden;
+            display: none;
+        }
+
+        .carousel-frame img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .carousel-frame iframe {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .carousel-button-container {
+            display: flex;
+            justify-content: space-between;
+            width: 1000px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        .carousel-button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>The Heat is On: Exploring Global Warming's Impact</h1>
+    <div class="carousel-container">
+        <div class="carousel" id="imageCarousel">
+            <div class="carousel-frame">
+                <img src="Introduction.png" height="550px" width="1000px" alt="Introduction Slide">
+            </div>
+
+            <div class="carousel-frame">
+                <img src="Timeline.png" height="550px" width="1000px" alt="Introduction Slide">
+            </div>
+
+            <div class="carousel-frame">
+                <img src="Causes.jpg" height="550px" width="1000px" alt="Introduction Slide">
+            </div>
+            
+            <div class="carousel-frame">
+                <iframe class="myIframe" src="2_CO2_D3_LineChart_overall.html" height="550px" width="900px"></iframe>
+            </div>
+            <div class="carousel-frame">
+                <iframe class="myIframe" src="3_CO2_D3_Animations_LineChart.html" height="550px" width="900px"></iframe>
+            </div>
+            <div class="carousel-frame">
+                <iframe class="myIframe" src="1_CO2_D3_Animations_BarChartRace.html" height="550px" width="900px"></iframe>
+            </div>
+            <div class="carousel-frame">
+                <iframe class="myIframe" src="2_CO2_Sectors_PieChart.html"  height="550px" width="450px"></iframe>
+                <iframe class="myIframe" src="4_CO2_D3_PieChart_top 3_vs_others.html"  height="550px" width="450px"></iframe>
+            </div>
+            <div class="carousel-frame">
+                <iframe class="myIframe" src="5_CO2_D3_Animations_Scatterplot_GDP.html" height="550px" width="900px"></iframe>
+            </div>
+
+            <div class="carousel-frame">
+                <img src="Effects.jpg" height="550px" width="900px" alt="Introduction Slide">
+            </div>
+
+            <div class="carousel-frame">
+                <iframe class="myIframe" src="D3_Effects_PieChart.html"  height="550px" width="450px"></iframe>
+                <iframe class="myIframe" src="D3_Heatwave_BarChart.html"  height="550px" width="450px"></iframe>
+            </div>
+
+            <div class="carousel-frame">
+                <iframe class="myIframe" src="D3_pH_CO2_Scatterplot.html"  height="550px" width="900px"></iframe>
+            </div>
+            <div class="carousel-frame">
+            <iframe class="myIframe" src="D3_SeaLevel_LineChart.html"  height="550px" width="900px"></iframe>
+            </div>
+            <div class="carousel-frame">
+                <iframe class="myIframe" src="D3_World_HeatMap.html"  height="650px" width="1000px"scrolling="no"></iframe>
+            </div>
+
+            <div class="carousel-frame">
+            <iframe class="myIframe" src="group project - climate change basic stacked barplot 1.html"  height="650px" width="1000px"scrolling="no"></iframe>
+            </div>
+            <div class="carousel-frame">
+                <iframe class="myIframe" src="group project - climate change line chart 1.html"  height="650px" width="1000px"scrolling="no"></iframe>
+            </div>
+            <div class="carousel-frame">
+                <iframe class="myIframe" src="group project - climate change line chart 2.html"  height="650px" width="1000px"scrolling="no"></iframe>
+            </div>
+
+            <div class="carousel-frame">
+                <img src="Recycle.jpg" height="550px" width="1000px" alt="Final Slide">
+            </div>
+
+            <div class="carousel-frame">
+                <img src="Final_Slide.png" height="550px" width="1000px" alt="Final Slide">
+            </div>
+            <!-- Add more iframe elements for additional HTML visualizations -->
+        </div>
+    
+        <div class="carousel-button-container">
+            <button class="carousel-button" onclick="prevSlide()">Previous</button>
+            <button class="carousel-button" onclick="nextSlide()">Next</button>
+        </div>
+    </div>
+
+    <script>
+        let currentIndex = 0;
+        const frames = document.querySelectorAll('.carousel-frame');
+
+        function showSlide(index) {
+            frames.forEach(frame => frame.style.display = 'none');
+            frames[index].style.display = 'flex';
+            currentIndex = index;
+        }
+
+        function prevSlide() {
+            currentIndex = (currentIndex - 1 + frames.length) % frames.length;
+            //refreshIframe();
+            showSlide(currentIndex);
+        }
+
+        function nextSlide() {
+            currentIndex = (currentIndex + 1) % frames.length;
+            //refreshIframe();
+            showSlide(currentIndex);
+        }
+
+        showSlide(currentIndex); // Display the initial slide
+    </script>
+</body>
+</html>

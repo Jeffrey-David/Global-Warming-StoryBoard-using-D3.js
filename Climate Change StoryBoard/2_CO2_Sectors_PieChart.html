@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #e2ffe3;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            font-family: Open Sans, sans-serif;
+        }
+        .arc text {
+            font: bold 12px sans-serif;
+            text-anchor: middle;
+        }
+
+        .arc path {
+            stroke: #fff;
+        }
+
+        .title {
+            fill: rgb(17, 136, 15);
+            font-weight: bold;
+            font-size: large;
+        }
+        
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 2px;
+            background: #333;
+            color: white;
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+        }
+        svg {
+            display: block; /* or display: inline-block; */
+            margin: 0 auto;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+</head>
+<body>
+    <svg width="340" height="340"></svg>
+    <p>&nbsp;&nbsp;<strong>CO2 Emissions by Industry (percent):</strong></p>
+    <ul>
+        <li>The transportation sector was the most substantial contributor to CO2 emissions, representing 35% of the total emissions.</li>
+        <li>The electricity sector was another major source, contributing 31% of the emissions.</li>
+        <li>The industrial sector and commercial activities made up 15% and 11% of the emissions, respectively.</li>
+    </ul>
+    
+    <div class="tooltip" style="opacity: 0;"></div>
+
+    <script>
+        var svg = d3.select("svg"),
+            width = svg.attr("width"),
+            height = svg.attr("height"),
+            radius = Math.min(width, height) / 2;
+
+        var g = svg.append("g")
+                   .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+        var color = d3.scaleOrdinal(['#f45050', '#ff9650', '#f3f56e', '#a450bb', '#52cfd3']); 
+
+        var pie = d3.pie().value(function(d) { 
+            return d.percent; 
+        });
+
+        var path = d3.arc()
+                     .outerRadius(radius - 35)
+                     .innerRadius(0);
+
+        var label = d3.arc()
+                      .outerRadius(radius)
+                      .innerRadius(radius - 110);
+
+        var tooltip = d3.select(".tooltip");
+
+        d3.csv("PieChart.csv", function(error, data) {
+            if (error) {
+                throw error;
+            }
+            var arc = g.selectAll(".arc")
+                       .data(pie(data))
+                       .enter().append("g")
+                       .attr("class", "arc");
+
+            arc.append("path")
+               .attr("d", path)
+               .attr("fill", function(d) { return color(d.data.Industry); })
+               .on("mouseover", function(d) {
+                   // Explode the slice
+                   d3.select(this)
+                     .transition()
+                     .duration(100)
+                     .attr("d", d3.arc()
+                                .outerRadius(radius - 30)
+                                .innerRadius(0)
+                             )
+                     .attr("fill", function(d) { return d3.color(color(d.data.Industry)).darker(0.3); });
+                   // Show tooltip
+                   tooltip.transition()
+                       .duration(200)
+                       .style("opacity", 0.9);
+                   tooltip.html(d.data.Industry + "<br>" + d.data.percent + "%")
+                       .style("left", (d3.event.pageX) + "px")
+                       .style("top", (d3.event.pageY - 28) + "px");
+               })
+               .on("mouseout", function(d) {
+                   // Reset the slice
+                   d3.select(this)
+                     .transition()
+                     .duration(100)
+                     .attr("d", path)
+                     .attr("fill", function(d) { return color(d.data.Industry); });
+                   // Hide tooltip
+                   tooltip.transition()
+                       .duration(500)
+                       .style("opacity", 0);
+               });
+
+            arc.append("text")
+            .attr("font-size", "12px")
+               .attr("transform", function(d) { 
+                    var centroid = label.centroid(d);
+                    
+                    if (d.data.Industry === "Transportation") {
+                        return "translate(" + centroid[0] + "," + centroid[1] + ")" +
+                               "translate(-30, 40)";  
+                    } else if (d.data.Industry === "Electricity") {
+                        return "translate(" + centroid[0] + "," + centroid[1] + ")" +
+                               "translate(5, -20)";  
+                    } else if (d.data.Industry === "Commercial") {
+                        return "translate(" + (centroid[0]+5) + "," + centroid[1] + ")" +
+                               "translate(0, 25)";
+                    } else if (d.data.Industry === "Others") {
+                        return "translate(" + centroid[0] + "," + centroid[1] + ")" +
+                               "translate(0, 15)";
+                    } else {
+                        return "translate(" + centroid[0] + "," + centroid[1] + ")" +
+                               "translate(30, 0)";
+                    }
+                })
+               .text(function(d) { 
+                    return d.data.Industry;
+                });
+        });
+
+        svg.append("g")
+           .attr("transform", "translate(" + (width / 2 - 150) + "," + 20 + ")")
+           .append("text")
+           .text("Greenhouse gas emission by sectors")
+           .attr("class", "title");
+    </script>
+</body>
+</html>

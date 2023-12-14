@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Line Chart</title>
+    <script src="d3.v7.js"></script>
+</head>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #ffcccc;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        font-family: Open Sans, sans-serif;
+    }
+    .line {
+        fill: none;
+        stroke-width: 2;
+    }
+    .axis-label {
+        font-size: 12px;
+    }
+    .legend {
+        font-size: 14px;
+    }
+    .chart-title {
+        font-size: 28px;
+    }
+    .axis-title {
+        font-size: 20px;
+    }
+</style>
+<body>
+    <svg width="950" height="550" id="chart">
+        <g id="legend" transform="translate(10, 10)"></g>
+        <!-- Title -->
+        <text x="500" y="30" text-anchor="middle" class="chart-title">Line Chart - Disaster Count by Year</text>
+        <!-- X-axis title -->
+        <text x="480" y="535" text-anchor="middle" class="axis-title">Year</text>
+        <!-- Y-axis title -->
+        <text x="160" y="405" text-anchor="middle" class="axis-title" transform="rotate(-90 20,400)">Disaster Count</text>                
+    </svg>
+
+    <script>
+        d3.csv("climate-related-disasters-frequency-lite-1.csv").then(function(data) {
+            data.forEach(function(d) {
+                d.Year = new Date(d.Year, 0, 1); // Convert the Year to a JavaScript Date object
+                d.Drought = +d.Drought;
+                d.Extreme_Temperature = +d.Extreme_Temperature; // Corrected column name
+                d.Flood = +d.Flood;
+                d.Landslide = +d.Landslide;
+                d.Storm = +d.Storm;
+                d.Wildfire = +d.Wildfire;
+            });
+
+            var svg = d3.select("#chart"),
+                margin = {top: 20, right: 20, bottom: 50, left: 60},
+                width = svg.attr("width") - margin.left - margin.right,
+                height = svg.attr("height") - margin.top - margin.bottom;
+
+            var x = d3.scaleTime()
+                .domain(d3.extent(data, function(d) { return d.Year; }))
+                .range([0, width]);
+
+            var y = d3.scaleLinear()
+                .domain([0, d3.max(data, function(d) {
+                    return Math.max(d.Drought, d.Extreme_Temperature, d.Flood, d.Landslide, d.Storm, d.Wildfire);
+                })])
+                .nice()
+                .range([height, 0]);
+
+            var g = svg.append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            g.append("g")
+                .attr("class", "x-axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x));
+
+            g.append("g")
+                .attr("class", "y-axis")
+                .call(d3.axisLeft(y));
+
+            // Create lines for each disaster type
+            var disasterTypes = ["Drought", "Extreme_Temperature", "Flood", "Landslide", "Storm", "Wildfire"];
+            var colors = d3.scaleOrdinal(d3.schemeCategory10);
+
+            disasterTypes.forEach(function(type) {
+                var typeLine = d3.line()
+                    .x(function(d) { return x(d.Year); })
+                    .y(function(d) { return y(d[type]); });
+
+                g.append("path")
+                    .datum(data)
+                    .attr("class", "line")
+                    .attr("d", typeLine)
+                    .style("stroke", colors(type));
+            });
+
+            // Create legend with the order based on the volume of disasters
+            var sortedDisasterTypes = disasterTypes.slice().sort(function(a, b) {
+                return data[data.length - 1][b] - data[data.length - 1][a];
+            });
+
+            var legend = d3.select("#legend")
+                .attr("transform", "translate(80, 50)") // Move legend to the right
+                .selectAll("g")
+                .data(sortedDisasterTypes)
+                .enter()
+                .append("g")
+                .attr("transform", function(d, i) {
+                    return "translate(0," + (i * 20) + ")";
+                });
+
+            legend.append("rect")
+                .attr("width", 18)
+                .attr("height", 18)
+                .style("fill", function(d) {
+                    return colors(d);
+                });
+
+            legend.append("text")
+                .attr("x", 24)
+                .attr("y", 9)
+                .attr("dy", ".35em")
+                .text(function(d) {
+                    return d;
+                })
+                .attr("class", "legend");
+        });
+    </script>
+</body>
+</html>

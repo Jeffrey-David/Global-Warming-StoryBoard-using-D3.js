@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Bar Chart Visualization</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        /* Add your CSS styles here */
+        /* You can customize the styles as needed */
+        .bar {
+            fill: steelblue;
+        }
+        .bar:hover {
+            fill: orange;
+        }
+        .tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 5px;
+            pointer-events: none;
+            opacity: 0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffcccc;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            font-family: Open Sans, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="bar-chart-container"></div>
+    <div style="position: absolute; top: 450px; left: 10px;">
+            <p><strong>It can be infered that the Heatwave Seasons are getting longer</strong></p>     
+    </div>
+    <div class="tooltip"></div>
+
+    <script>
+        // Data embedded directly into the script
+        const data = [
+            { Decade: "1960s", Heatwave_Season: 25 },
+            { Decade: "1970s", Heatwave_Season: 32 },
+            { Decade: "1980s", Heatwave_Season: 38 },
+            { Decade: "1990s", Heatwave_Season: 45 },
+            { Decade: "2000s", Heatwave_Season: 51 },
+            { Decade: "2010s", Heatwave_Season: 68 },
+        ];
+
+        // Dimensions and margins for the chart
+        const margin = { top: 20, right: 30, bottom: 40, left: 80 };
+        const width = 450 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Create an SVG element
+        const svg = d3.select("#bar-chart-container")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height +40+ margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top+30})`);
+
+        // X and Y scales
+        const x = d3.scaleBand()
+            .domain(data.map(d => d.Decade))
+            .range([0, width])
+            .padding(0.3); // Reduce the padding for smaller width
+        const y = d3.scaleLinear()
+            .domain([0, d3.max(data, d => d.Heatwave_Season)])
+            .nice()
+            .range([height, 0]);
+
+        // Create bars
+        svg.selectAll("rect")
+            .data(data)
+            .enter()
+            .append("rect")
+            .attr("x", d => x(d.Decade))
+            .attr("y", height)
+            .attr("width", x.bandwidth())
+            .attr("height", 0)
+            .attr("fill", "darkred")
+            .on("mouseover", function(event, d) {
+                d3.select(this).attr("fill", "darkorange");
+                tooltip.style("opacity", 1).html(`${d.Decade}<br>Avg Length: ${d.Heatwave_Season} days`)
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 30) + "px");
+            })
+            .on("mouseout", function() {
+                d3.select(this).attr("fill", "darkred");
+                tooltip.style("opacity", 0);
+            })
+            .transition()
+            .duration(3000)
+            .attr("y", d => y(d.Heatwave_Season))
+            .attr("height", d => height - y(d.Heatwave_Season));
+
+        // X-axis
+        svg.append("g")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(x));
+
+        // Y-axis
+        svg.append("g")
+            .call(d3.axisLeft(y).ticks(5));
+
+        // X-axis label
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", height + margin.bottom)
+            .attr("text-anchor", "middle")
+            .style("font-size", "14px")
+            .text("Decade");
+
+        // Y-axis label
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -height / 2)
+            .attr("y", -margin.left + 40)
+            .attr("text-anchor", "middle")
+            .style("font-size", "14px")
+            .text("Avg Length of Heatwave Season");
+        
+        svg.append("text")
+            .attr("class", "title")
+            .attr("x", (width / 2))
+            .attr("y", -20)
+            .attr("text-anchor", "middle")
+            .text("HeatWave Season by Decade")
+            .style("font-size", "24px")
+            .style("font-weight", "bold")
+            .style("fill", "darkred");
+        const tooltip = d3.select(".tooltip");
+    </script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Scatter Plot</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <style>
+        .dot {
+            fill: #69b3a2;
+            opacity: 0; /* Initially set opacity to 0 */
+        }
+        .regression-line {
+            stroke: red;
+            stroke-width: 2;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffcccc;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            font-family: Open Sans, sans-serif;
+        }
+    </style>
+</head>
+<body style="background-color: #ffcccc;">
+    <div style="align-content: center;" width="900px">
+    <img src="Equation.JPG" style="padding-left: 100px;"  width="700px" height="250px">
+    </div>
+    <div id="chart"  height="300px"></div>
+
+    <script>
+        d3.csv("CO2_ph.csv").then(function(data) {
+            // Set up the dimensions and margins of the graph
+            var margin = { top: 20, right: 20, bottom: 70, left: 120 };
+            var width = 800 - margin.left - margin.right;
+            var height = 290 - margin.top - margin.bottom;
+
+            // Create an SVG element
+            var svg = d3.select("#chart")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // Convert data to numeric values
+            data.forEach(function(d) {
+                d.pH = +d.pH;
+                d.CO2 = +d.CO2;
+            });
+
+            // Set up the scales for x and y axes
+            var xScale = d3.scaleLinear()
+                .domain([d3.min(data, function (d) { return (d.pH-0.005); }), d3.max(data, function (d) { return (d.pH+0.005); })])
+                .range([0, width]);
+
+            var yScale = d3.scaleLinear()
+                .domain([d3.min(data, function (d) { return d.CO2-50000; }), d3.max(data, function (d) { return d.CO2+100000; })])
+                .range([height, 0]);
+
+            // Create x and y axes
+            var xAxis = d3.axisBottom(xScale);
+            var yAxis = d3.axisLeft(yScale);
+
+            // Append x and y axes to the SVG
+            svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis)
+                .append("text")
+                .attr("class", "label")
+                .attr("x", width)
+                .attr("y", 40)
+                .style("text-anchor", "end")
+                .text("pH"); // Add the x-axis label "pH"
+
+            svg.append("g")
+                .call(yAxis)
+                .append("text")
+                .attr("class", "label")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -60)
+                .attr("dy", "0.71em")
+                .style("text-anchor", "end")
+                .text("CO2"); // Add the y-axis label "CO2"
+
+            // Create circles for the data points with animation
+            svg.selectAll(".dot")
+                .data(data)
+                .enter().append("circle")
+                .attr("class", "dot")
+                .attr("cx", width / 2) // Initially position them in the middle
+                .attr("cy", height)
+                .attr("r", 4)
+                .transition()
+                .delay(function(d, i) { return i * 20; }) // Delay the animation
+                .duration(3000)
+                .attr("cx", function(d) { return xScale(d.pH); })
+                .attr("cy", function(d) { return yScale(d.CO2); })
+                .style("opacity", 1);
+
+            // Add a title
+            svg.append("text")
+                .attr("x", (width / 2))
+                .attr("y", 10 - (margin.top / 2))
+                .attr("text-anchor", "middle")
+                .style("font-size", "16px")
+                .text("CO2 vs pH")
+                .style("font-size", "24px")
+            .style("font-weight", "bold")
+            .style("fill", "darkred");
+
+            // Add x and y labels
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + margin.top + 20) // Adjust the vertical position
+                .style("text-anchor", "middle")
+                .text("pH");
+
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 30 - margin.left)
+                .attr("x", 0 - height / 2)
+                .attr("dy", "1em")
+                .style("text-anchor", "middle")
+                .text("CO2");
+
+            // Calculate regression coefficients
+            var n = data.length;
+            var sumX = data.reduce(function(acc, d) { return acc + d.pH; }, 0);
+            var sumY = data.reduce(function(acc, d) { return acc + d.CO2; }, 0);
+            var sumXY = data.reduce(function(acc, d) { return acc + d.pH * d.CO2; }, 0);
+            var sumX2 = data.reduce(function(acc, d) { return acc + d.pH * d.pH; }, 0);
+            var sumY2 = data.reduce(function(acc, d) { return acc + d.CO2 * d.CO2; }, 0);
+
+            var a = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            var b = (sumY - a * sumX) / n;
+
+            // Define the range of x-values for the regression line
+            var xRange = [d3.min(data, function (d) { return d.pH; }), d3.max(data, function (d) { return d.pH; })];
+
+            // Calculate y-values for the regression line
+            var yRange = xRange.map(function(x) {
+                return a * x + b;
+            });
+
+            var regressionData = xRange.map(function(x, i) {
+                return { pH: x, CO2: yRange[i] };
+            });
+
+            var regressionLine = d3.line()
+                .x(function(d) { return xScale(d.pH); })
+                .y(function(d) { return yScale(d.CO2); });
+
+            // Delay drawing the regression line
+            setTimeout(function() {
+                // Draw the regression line with a transition
+                svg.append("path")
+                    .datum(regressionData)
+                    .attr("class", "regression-line")
+                    .attr("d", regressionLine)
+                    .style("opacity", 0) // Initially set opacity to 0
+                    .transition()
+                    .duration(3000) // Adjust the duration for the desired animation speed
+                    .style("opacity", 1); // Fade in the regression line
+            }, 4000); // 4 seconds delay
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        .bar {
+            fill: rgb(226, 71, 19);
+        }
+
+        .bar:hover {
+            fill: rgb(255, 0, 0);
+        }
+
+        .value-label {
+            font-size: 12px;
+            text-anchor: middle;
+            fill: white;
+        }
+
+        #tooltip {
+            position: absolute;
+            opacity: 0;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+</head>
+
+<body>
+    <div id="tooltip"></div>
+    <svg width="750" height="500"></svg>
+    <script>
+        var svg = d3.select("svg"),
+            margin = 50,
+            width = svg.attr("width") - margin * 2,
+            height = svg.attr("height") - margin * 2
+
+        svg.append("text")
+            .attr("transform", "translate(350,20)")
+            .attr("x", -80)
+            .attr("y", 10)
+            .attr("font-size", "24px")
+            .text("CO2 Emission over Years")
+
+        
+        var tooltip = d3.select("body").append("div")
+            .attr("id", "tooltip")
+            .style("position", "absolute")
+            .style("opacity", 0);
+
+        var xScale = d3.scaleBand().range([0, width]).padding(0.4),
+            yScale = d3.scaleLinear().range([height, 10]);
+
+        var g = svg.append("g")
+            .attr("transform", "translate(" + margin + "," + margin + ")");
+
+        d3.csv("data.csv", function (data) {
+
+            data = data.filter(function (d) {
+                return d.year !== undefined && d.year !== "";
+            });
+
+            xScale.domain(data.map(function (d) {
+                return d.year;
+            }));
+            yScale.domain([0, d3.max(data, function (d) {
+                return d.value;
+            })]);
+
+            g.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(xScale))
+                .append("text")
+                .attr("y", 40)
+                .attr("x", width - 300)
+                .attr("text-anchor", "end")
+                .attr("stroke", "black")
+                .attr("font-size", "15px")
+                .text("Year");
+
+            g.append("g")
+                .call(d3.axisLeft(yScale).tickFormat(function (d) {
+                    return "" + d;
+                })
+                    .ticks(10))
+                .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -40)
+                .attr("x", -60)
+                .attr("dy", "1em")
+                .attr("text-anchor", "end")
+                .attr("stroke", "black")
+                .attr("font-size", "15px")
+                .text("Emission in Billion Metric Tons");
+
+            g.selectAll(".bar")
+                .data(data)
+                .enter().append("rect")
+                .attr("class", "bar")
+                .attr("x", function (d) {
+                    return xScale(d.year);
+                })
+                .attr("y", function (d) {
+                    return yScale(d.value);
+                })
+                .attr("width", xScale.bandwidth())
+                .attr("height", function (d) {
+                    return height - yScale(d.value);
+                })
+                .on("mouseover", function (d) {
+                    
+                    tooltip.transition()
+                        .duration(200)
+                        .text(d.value)
+                        .style("opacity", .9);
+                    tooltip.html(d.value.toFixed(2)) 
+                        .style("left", (xScale(d.year) + margin) + "px")
+                        .style("top", (yScale(d.value) + margin - 10) + "px");
+                })
+                .on("mouseout", function (d) {
+                    
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+        });
+    </script>
+</body>
+
+</html>

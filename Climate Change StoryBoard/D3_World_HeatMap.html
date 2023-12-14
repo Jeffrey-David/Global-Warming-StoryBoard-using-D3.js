@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      /* Add any CSS styles here if needed */
+      svg {
+        width: 1000px;
+        height: 500px;
+        margin: 0px auto;
+      }
+      .slider-container {
+        display: flex; /* Make the slider and selected year div appear side by side */
+        align-items: center; /* Vertically align the items */
+        width: 80%;
+        margin: 0px auto;
+      }
+      /* Increase the font size of the slider text */
+      #year-slider {
+        font-size: 40px;
+        margin-right: 10px; /* Add some spacing between the slider and the selected year */
+      }
+      .selected-year {
+        font-size: 30px; /* Style the selected year */
+      }
+      .tooltip {
+        position: absolute;
+        background-color: white;
+        border: 1px solid #ccc;
+        padding: 5px;
+        display: none;
+        pointer-events: none;
+      }
+      .legend {
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.2);
+        border: 1px solid #ccc;
+        padding: 10px;
+        bottom: 120px; /* Adjusted to move it 200 pixels up */
+        left: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .legend-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .legend-rect {
+        width: 200px;
+        height: 10px;
+        background: linear-gradient(to right, blue, red);
+        margin-bottom: 5px;
+      }
+
+      .legend-labels {
+        display: flex;
+        justify-content: space-between;
+        width: 200px;
+      }
+      body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffcccc;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            font-family: Open Sans, sans-serif;
+        }
+    </style>
+  </head>
+  <body>
+    <script src="https://unpkg.com/d3@4"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
+    <div style="text-align: center;"><h1 style="font-size: 25px; color: darkred;">Heat Map of the World from 1950 to 2013</h1></div>
+    <div class="slider-container" style="padding-left: 200px;">
+      <!-- Add a class to the slider input for styling -->
+      <input type="range" class="slider" min="1950" max="2013" step="1" value="1950" id="year-slider">
+      <div class="selected-year" id="selected-year" style="font-size: 20px; color: darkred;">1950</div>
+    </div>
+    <svg id="map" style="padding-top: 100;" ></svg>
+    <div class="tooltip" id="tooltip"></div>
+    <div class="legend" id="legend">
+      <div class="legend-title">Temperature Legend</div>
+      <div class="legend-rect"></div>
+      <div class="legend-labels">
+        <span>-21°C</span>
+        <span>31°C</span>
+      </div>
+    </div>
+    <script>
+      var svg = d3.select("#map")
+        .style("background-color", "lightblue");
+
+      var svg = d3.select("#map");
+      var path = d3.geoPath().projection(d3.geoMercator());
+      var yearSlider = document.getElementById("year-slider");
+      var selectedYearLabel = document.getElementById("selected-year");
+      var world, tempDataDict, colorScale;
+
+      var tooltip = d3.select("#tooltip");
+
+      // Load the temperature data from the CSV file
+      d3.csv("temp_1950.csv", function(tempData) {
+        // Convert the temperature data to a dictionary for easy access
+        tempDataDict = {};
+        tempData.forEach(function(d) {
+          var year = +d.Year;
+          var country = d.Country;
+          var temperature = +d.AverageTemperature;
+          if (!isNaN(year) && !isNaN(temperature)) {
+            if (!tempDataDict[year]) {
+              tempDataDict[year] = {};
+            }
+            tempDataDict[year][country] = temperature;
+          }
+        });
+
+        // Load the world map data
+        d3.json("world-topo.json", function(error, worldData) {
+          if (error) throw error;
+          world = worldData;
+
+          // Define the color scale from blue to red using the BrBG interpolator
+          var minTemperature = -21;
+          var maxTemperature = 31;
+          colorScale = d3.scaleSequential()
+            .domain([minTemperature, maxTemperature])
+            .interpolator(d3.interpolateRgb("blue", "red")); // Change the color interpolator to BrBG
+
+          // Initial map for the default year (1950)
+          updateMap(1950);
+
+          // Event listener for the slider input
+          yearSlider.addEventListener("input", function() {
+            var selectedYear = parseInt(yearSlider.value);
+            selectedYearLabel.textContent = selectedYear;
+            // Update the map when the slider is moved
+            updateMap(selectedYear);
+          });
+        });
+      });
+
+      // Function to update the map based on the selected year
+      function updateMap(year) {
+        
+        var tempDataForYear = tempDataDict[year];
+        svg.selectAll("path").remove(); // Clear existing paths
+        svg.selectAll("path")
+          .data(topojson.feature(world, world.objects.countries).features)
+          .enter().append("path")
+          .attr("d", path)
+          .style("fill", function(d) {
+            var countryName = d.properties.name;
+            var temperature = tempDataForYear[countryName];
+            if (temperature) {
+              return colorScale(temperature);
+            } else {
+              console.log("Country with 'lightgray' fill color:", countryName, temperature);
+              return "darkgray";
+            }
+          })
+          .on("mouseover", function(d) {
+            var countryName = d.properties.name;
+            var temperature = tempDataForYear[countryName];
+            tooltip.html(`<strong>${countryName}</strong><br>Temperature: ${temperature.toFixed(2)}°C`);
+            tooltip.style("left", (d3.event.pageX + 10) + "px");
+            tooltip.style("top", (d3.event.pageY - 30) + "px");
+            tooltip.style("display", "block");
+          })
+          .on("mouseout", function() {
+            tooltip.style("display", "none");
+          });
+      }
+    </script>
+  </body>
+</html>

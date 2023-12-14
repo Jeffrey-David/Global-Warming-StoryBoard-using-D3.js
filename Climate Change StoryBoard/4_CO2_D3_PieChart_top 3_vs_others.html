@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #e2ffe3;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            font-family: Open Sans, sans-serif;
+        }
+        .arc text {
+            font: bold 12px sans-serif;
+            text-anchor: middle;
+        }
+
+        .arc path {
+            stroke: #fff;
+        }
+
+        .title {
+            fill: teal;
+            font-size: 18px;
+            font-family: Open Sans, sans-serif;
+        }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 2px;
+            background: #333;
+            color: white;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+        svg {
+            display: block; /* or display: inline-block; */
+            margin: 0 auto;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+</head>
+<body>
+    <p>&nbsp;&nbsp;<strong>CO2 Emissions by Country (2020):</strong></p>
+    <ul>
+        <li>The United States was the largest contributor to CO2 emissions in 2020, accounting for 25% of the total global emissions.</li>
+        <li>China followed as the second-largest emitter, responsible for 14% of global emissions.</li>
+        <li>Despite lower emissions on an individual basis, Russia contributed significantly, making up 7% of global emissions.</li>
+    </ul>
+    <svg width="350" height="300"></svg>
+    
+    <div class="tooltip" style="opacity: 0;"></div>
+    <script>
+        var svg = d3.select("svg"),
+            width = svg.attr("width"),
+            height = svg.attr("height"),
+            radius = Math.min(width, height) / 2;
+
+        var g = svg.append("g")
+            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+        var color = d3.scaleOrdinal(['#ff7f00', '#984ea3', '#377eb8', '#4daf4a', '#e41a1c']);
+
+        var pie = d3.pie().value(function(d) {
+            return d.Percent;
+        });
+
+        var path = d3.arc()
+            .outerRadius(radius - 35)
+            .innerRadius(0);
+
+        var label = d3.arc()
+            .outerRadius(radius)
+            .innerRadius(radius - 190);
+
+        var tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        d3.csv("CO2 emission_Top3_vs_Others_2000.csv", function(error, data) {
+            if (error) {
+                throw error;
+            }
+
+            var arc = g.selectAll(".arc")
+                .data(pie(data))
+                .enter().append("g")
+                .attr("class", "arc");
+
+            arc.append("path")
+                .attr("d", path)
+                .attr("fill", function(d) {
+                    return color(d.data.Country);
+                })
+                .on("mouseover", function(d) {
+                    // Explode the slice
+                    d3.select(this)
+                        .transition()
+                        .duration(100)
+                        .attr("transform", "scale(1.1)");
+                    // Show tooltip
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+                    tooltip.html(d.data.Country + "<br>" + d.data.Percent + "%")
+                        .style("left", (d3.event.pageX) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+                .on("mouseout", function(d) {
+                    // Reset the slice
+                    d3.select(this)
+                        .transition()
+                        .duration(100)
+                        .attr("transform", "scale(1)");
+                    // Hide tooltip
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            arc.append("text")
+                .attr("font-size", "9px")
+                .attr("transform", function(d) {
+                    var pos = label.centroid(d);
+                    return "translate(" + (pos[0] - 5) + "," + (pos[1] - 20) + ")";
+                })
+                .text(function(d) {
+                    return d.data.Country;
+                });
+
+
+        });
+
+        svg.append("g")
+            .attr("transform", "translate(" + (width / 2 - 70) + "," + (height) + ")")
+            .append("text")
+            .text("CO2 Emissions in 2020")
+            .attr("class", "title")
+            .attr("font-weight","bold");
+
+        
+    </script>
+</body>
+</html>
